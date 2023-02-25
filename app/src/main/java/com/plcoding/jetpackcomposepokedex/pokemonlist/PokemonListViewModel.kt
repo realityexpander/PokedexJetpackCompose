@@ -4,6 +4,7 @@ import android.graphics.Bitmap
 import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.toMutableStateList
 import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -15,8 +16,11 @@ import com.plcoding.jetpackcomposepokedex.util.Resource
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import java.util.*
+import kotlinx.coroutines.yield
+import okhttp3.internal.toImmutableList
+import java.util.Locale
 import javax.inject.Inject
+import kotlin.random.Random
 
 @HiltViewModel
 class PokemonListViewModel @Inject constructor(
@@ -90,9 +94,25 @@ class PokemonListViewModel @Inject constructor(
                     loadError.value = result.message!!
                     isLoading.value = false
                 }
+                is Resource.Loading -> {
+                    // no-op
+                }
             }
         }
     }
+
+    fun updatePokemonDominantColor(entry: PokedexListEntry, color: Color) {
+
+        // Update the entry
+        pokemonList.value = pokemonList.value.map {
+            if(it.number == entry.number) {
+                it.dominantColor = color
+            }
+            it
+        }
+
+    }
+
 
     fun calcDominantColor(drawable: Drawable, onFinish: (Color) -> Unit) {
         val bmp = (drawable as BitmapDrawable).bitmap.copy(Bitmap.Config.ARGB_8888, true)

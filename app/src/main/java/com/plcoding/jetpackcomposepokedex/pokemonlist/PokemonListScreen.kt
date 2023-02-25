@@ -1,5 +1,7 @@
 package com.plcoding.jetpackcomposepokedex.pokemonlist
 
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -9,39 +11,43 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.*
-import androidx.compose.runtime.Composable
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Alignment.Companion.Center
 import androidx.compose.ui.Alignment.Companion.CenterHorizontally
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.focus.FocusState
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.hilt.navigation.compose.hiltNavGraphViewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
-import androidx.navigation.compose.navigate
-import coil.request.ImageRequest
-import com.google.accompanist.coil.CoilImage
+import androidx.palette.graphics.Palette
+import androidx.swiperefreshlayout.widget.CircularProgressDrawable
+import coil.annotation.ExperimentalCoilApi
+import coil.compose.rememberImagePainter
 import com.plcoding.jetpackcomposepokedex.R
 import com.plcoding.jetpackcomposepokedex.data.models.PokedexListEntry
 import com.plcoding.jetpackcomposepokedex.ui.theme.RobotoCondensed
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import java.io.IOException
+import java.net.HttpURLConnection
+import java.net.URL
 
 @Composable
 fun PokemonListScreen(
     navController: NavController,
-    viewModel: PokemonListViewModel = hiltNavGraphViewModel()
+    viewModel: PokemonListViewModel = hiltViewModel()
 ) {
     Surface(
         color = MaterialTheme.colors.background,
@@ -99,7 +105,7 @@ fun SearchBar(
                 .background(Color.White, CircleShape)
                 .padding(horizontal = 20.dp, vertical = 12.dp)
                 .onFocusChanged {
-                    isHintDisplayed = it != FocusState.Active && text.isEmpty()
+                    isHintDisplayed = !it.isFocused && text.isEmpty()
                 }
         )
         if(isHintDisplayed) {
@@ -116,9 +122,10 @@ fun SearchBar(
 @Composable
 fun PokemonList(
     navController: NavController,
-    viewModel: PokemonListViewModel = hiltNavGraphViewModel()
+    viewModel: PokemonListViewModel = hiltViewModel()
 ) {
-    val pokemonList by remember { viewModel.pokemonList }
+//    val pokemonList by remember { viewModel.pokemonList }
+    val pokemonList by viewModel.pokemonList
     val endReached by remember { viewModel.endReached }
     val loadError by remember { viewModel.loadError }
     val isLoading by remember { viewModel.isLoading }
@@ -156,17 +163,26 @@ fun PokemonList(
 
 }
 
+@OptIn(ExperimentalCoilApi::class)
 @Composable
 fun PokedexEntry(
     entry: PokedexListEntry,
     navController: NavController,
     modifier: Modifier = Modifier,
-    viewModel: PokemonListViewModel = hiltNavGraphViewModel()
+    viewModel: PokemonListViewModel = hiltViewModel()
 ) {
+    val scope = rememberCoroutineScope()
+
     val defaultDominantColor = MaterialTheme.colors.surface
     var dominantColor by remember {
         mutableStateOf(defaultDominantColor)
     }
+
+    val circularProgressDrawable = CircularProgressDrawable(LocalContext.current)
+    circularProgressDrawable.strokeWidth = 5f
+    circularProgressDrawable.centerRadius = 30f
+    circularProgressDrawable.start()
+    var isProgressVisible by remember { mutableStateOf(true) }
 
     Box(
         contentAlignment = Center,
@@ -177,38 +193,90 @@ fun PokedexEntry(
             .background(
                 Brush.verticalGradient(
                     listOf(
-                        dominantColor,
+//                        dominantColor,
+                        entry.dominantColor ?: dominantColor ?: defaultDominantColor,
                         defaultDominantColor
                     )
                 )
             )
             .clickable {
                 navController.navigate(
-                    "pokemon_detail_screen/${dominantColor.toArgb()}/${entry.pokemonName}"
+                    "pokemon_detail_screen/" +
+                            "${(entry.dominantColor ?: Color.Transparent).toArgb()}" +
+                            "/${entry.pokemonName}"
                 )
             }
     ) {
+
         Column {
-            CoilImage(
-                request = ImageRequest.Builder(LocalContext.current)
-                    .data(entry.imageUrl)
-                    .target {
-                        viewModel.calcDominantColor(it) { color ->
-                            dominantColor = color
+
+            Image(
+                painter = rememberImagePainter(entry.imageUrl) {
+                    crossfade(true)
+                    error(android.R.drawable.stat_notify_error)
+                    this.listener(
+                        onSuccess = { _, res ->
+//                            viewModel.calcDominantColor() { color ->
+//                                dominantColor = color
+//                            }
+
+                            entry.dominantColor ?: run {
+                                scope.launch(Dispatchers.IO) {
+
+                                    getBitmapFromUrl(entry.imageUrl) { bitmap ->
+                                        bitmap?.also {
+                                            calcDominantColorFromBitmap(it) { color ->
+                                                dominantColor = color  // used to force recompose
+                                                viewModel.updatePokemonDominantColor(entry, color)
+                                            }
+                                        }
+                                    }
+
+                                }
+                            }
+                            isProgressVisible = false
+                        },
+                        onError = { _, _ ->
+                            viewModel.updatePokemonDominantColor(entry, Color.Red)
+                            isProgressVisible = false
+                        },
+                        onCancel = { _->
+                            viewModel.updatePokemonDominantColor(entry, Color.Yellow)
+                            isProgressVisible = false
                         }
-                    }
-                    .build(),
+                    )
+                },
                 contentDescription = entry.pokemonName,
-                fadeIn = true,
-                modifier = Modifier
-                    .size(120.dp)
-                    .align(CenterHorizontally)
-            ) {
+                modifier = Modifier.size(128.dp),
+                contentScale = ContentScale.Crop
+            )
+            if(isProgressVisible) {
                 CircularProgressIndicator(
                     color = MaterialTheme.colors.primary,
                     modifier = Modifier.scale(0.5f)
                 )
             }
+
+//            CoilImage(
+//                request = ImageRequest.Builder(LocalContext.current)
+//                    .data(entry.imageUrl)
+//                    .target {
+//                        viewModel.calcDominantColor(it) { color ->
+//                            dominantColor = color
+//                        }
+//                    }
+//                    .build(),
+//                contentDescription = entry.pokemonName,
+//                fadeIn = true,
+//                modifier = Modifier
+//                    .size(120.dp)
+//                    .align(CenterHorizontally)
+//            ) {
+//                CircularProgressIndicator(
+//                    color = MaterialTheme.colors.primary,
+//                    modifier = Modifier.scale(0.5f)
+//                )
+//            }
             Text(
                 text = entry.pokemonName,
                 fontFamily = RobotoCondensed,
@@ -216,6 +284,28 @@ fun PokedexEntry(
                 textAlign = TextAlign.Center,
                 modifier = Modifier.fillMaxWidth()
             )
+        }
+    }
+}
+
+fun getBitmapFromUrl(url: String, onResult: (Bitmap?) -> Unit) {
+    try {
+        val connection = URL(url).openConnection() as HttpURLConnection
+        connection.doInput = true
+        connection.connect()
+        val input = connection.inputStream
+        val bitmap = BitmapFactory.decodeStream(input)
+        onResult(bitmap)
+    } catch (e: IOException) {
+        e.printStackTrace()
+        onResult(null)
+    }
+}
+
+fun calcDominantColorFromBitmap(bitmap: Bitmap, onResult: (Color) -> Unit) {
+    Palette.from(bitmap).generate { palette ->
+        palette?.dominantSwatch?.rgb?.let { rgb ->
+            onResult(Color(rgb))
         }
     }
 }

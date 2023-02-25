@@ -2,6 +2,7 @@ package com.plcoding.jetpackcomposepokedex.pokemondetail
 
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
 import androidx.compose.foundation.*
 import com.plcoding.jetpackcomposepokedex.R
 import androidx.compose.foundation.layout.*
@@ -25,17 +26,20 @@ import androidx.compose.ui.focus.focusModifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.hilt.navigation.compose.hiltNavGraphViewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
-import com.google.accompanist.coil.CoilImage
+import coil.compose.rememberImagePainter
 import com.plcoding.jetpackcomposepokedex.data.remote.responses.Pokemon
 import com.plcoding.jetpackcomposepokedex.data.remote.responses.Type
+import com.plcoding.jetpackcomposepokedex.pokemonlist.calcDominantColorFromBitmap
+import com.plcoding.jetpackcomposepokedex.pokemonlist.getBitmapFromUrl
 import com.plcoding.jetpackcomposepokedex.util.Resource
 import com.plcoding.jetpackcomposepokedex.util.parseStatToAbbr
 import com.plcoding.jetpackcomposepokedex.util.parseStatToColor
@@ -50,7 +54,7 @@ fun PokemonDetailScreen(
     navController: NavController,
     topPadding: Dp = 20.dp,
     pokemonImageSize: Dp = 200.dp,
-    viewModel: PokemonDetailViewModel = hiltNavGraphViewModel()
+    viewModel: PokemonDetailViewModel = hiltViewModel()
 ) {
     val pokemonInfo = produceState<Resource<Pokemon>>(initialValue = Resource.Loading()) {
         value = viewModel.getPokemonInfo(pokemonName)
@@ -97,13 +101,41 @@ fun PokemonDetailScreen(
             .fillMaxSize()) {
             if(pokemonInfo is Resource.Success) {
                 pokemonInfo.data?.sprites?.let {
-                    CoilImage(
-                        data = it.frontDefault,
+//                    CoilImage(
+//                        data = it.frontDefault,
+//                        contentDescription = pokemonInfo.data.name,
+//                        fadeIn = true,
+//                        modifier = Modifier
+//                            .size(pokemonImageSize)
+//                            .offset(y = topPadding)
+//                    )
+                    Image(
+                        painter = rememberImagePainter(it.frontDefault){
+                            fadeIn()
+                            error(android.R.drawable.stat_notify_error)
+//                            this.listener(
+//                                onSuccess = { req, res ->
+////                            viewModel.calcDominantColor() { color ->
+////                                dominantColor = color
+////                            }
+//
+//                                    val bitmap = getBitmapFromUrl(it.frontDefault)
+//                                    bitmap?.also {
+//                                        calcDominantColorFromBitmap(it) { color ->
+//                                            dominantColor = color
+//                                        }
+//                                    }
+//                                },
+//                                onError = { _, _ ->
+//                                    dominantColor = Color.Red
+//                                },
+//                            )
+                        },
                         contentDescription = pokemonInfo.data.name,
-                        fadeIn = true,
                         modifier = Modifier
                             .size(pokemonImageSize)
-                            .offset(y = topPadding)
+                            .offset(y = topPadding),
+//                        contentScale = ContentScale.Crop
                     )
                 }
             }
