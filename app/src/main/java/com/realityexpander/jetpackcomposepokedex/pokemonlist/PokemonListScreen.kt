@@ -233,11 +233,13 @@ fun PokedexEntry(
                             isProgressVisible = false
                         },
                         onError = { _, _ ->
-                            viewModel.updatePokemonDominantColor(entry, Color.Red)
+//                            viewModel.updatePokemonDominantColor(entry, Color.Red)
+                            dominantColor = Color.Red
                             isProgressVisible = false
                         },
                         onCancel = { _->
-                            viewModel.updatePokemonDominantColor(entry, Color.Yellow)
+//                            viewModel.updatePokemonDominantColor(entry, Color.Yellow)
+                            dominantColor = Color.Yellow
                             isProgressVisible = false
                         }
                     )
