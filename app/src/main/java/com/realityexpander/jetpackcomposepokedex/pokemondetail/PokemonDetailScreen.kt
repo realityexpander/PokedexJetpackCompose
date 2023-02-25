@@ -33,6 +33,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import coil.annotation.ExperimentalCoilApi
 import coil.compose.rememberImagePainter
 import com.realityexpander.jetpackcomposepokedex.data.remote.responses.Pokemon
 import com.realityexpander.jetpackcomposepokedex.data.remote.responses.Type
@@ -43,6 +44,7 @@ import com.realityexpander.jetpackcomposepokedex.util.parseTypeToColor
 import java.util.*
 import kotlin.math.round
 
+@OptIn(ExperimentalCoilApi::class)
 @Composable
 fun PokemonDetailScreen(
     dominantColor: Color,
@@ -97,35 +99,10 @@ fun PokemonDetailScreen(
             .fillMaxSize()) {
             if(pokemonInfo is Resource.Success) {
                 pokemonInfo.data?.sprites?.let {
-//                    CoilImage(
-//                        data = it.frontDefault,
-//                        contentDescription = pokemonInfo.data.name,
-//                        fadeIn = true,
-//                        modifier = Modifier
-//                            .size(pokemonImageSize)
-//                            .offset(y = topPadding)
-//                    )
                     Image(
                         painter = rememberImagePainter(it.frontDefault){
                             fadeIn()
                             error(android.R.drawable.stat_notify_error)
-//                            this.listener(
-//                                onSuccess = { req, res ->
-////                            viewModel.calcDominantColor() { color ->
-////                                dominantColor = color
-////                            }
-//
-//                                    val bitmap = getBitmapFromUrl(it.frontDefault)
-//                                    bitmap?.also {
-//                                        calcDominantColorFromBitmap(it) { color ->
-//                                            dominantColor = color
-//                                        }
-//                                    }
-//                                },
-//                                onError = { _, _ ->
-//                                    dominantColor = Color.Red
-//                                },
-//                            )
                         },
                         contentDescription = pokemonInfo.data.name,
                         modifier = Modifier
@@ -214,7 +191,11 @@ fun PokemonDetailSection(
             .verticalScroll(scrollState)
     ) {
         Text(
-            text = "#${pokemonInfo.id} ${pokemonInfo.name.capitalize(Locale.ROOT)}",
+            text = "#${pokemonInfo.id} ${pokemonInfo.name.replaceFirstChar {
+                if (it.isLowerCase()) it.titlecase(
+                    Locale.ROOT
+                ) else it.toString()
+            }}",
             fontWeight = FontWeight.Bold,
             fontSize = 30.sp,
             textAlign = TextAlign.Center,
@@ -247,7 +228,11 @@ fun PokemonTypeSection(types: List<Type>) {
                     .height(35.dp)
             ) {
                 Text(
-                    text = type.type.name.capitalize(Locale.ROOT),
+                    text = type.type.name.replaceFirstChar {
+                        if (it.isLowerCase()) it.titlecase(
+                            Locale.ROOT
+                        ) else it.toString()
+                    },
                     color = Color.White,
                     fontSize = 18.sp
                 )

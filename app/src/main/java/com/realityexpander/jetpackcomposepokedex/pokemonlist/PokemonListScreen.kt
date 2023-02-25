@@ -35,7 +35,6 @@ import androidx.palette.graphics.Palette
 import androidx.swiperefreshlayout.widget.CircularProgressDrawable
 import coil.annotation.ExperimentalCoilApi
 import coil.compose.rememberImagePainter
-import com.plcoding.jetpackcomposepokedex.R
 import com.realityexpander.jetpackcomposepokedex.R
 import com.realityexpander.jetpackcomposepokedex.data.models.PokedexListEntry
 import com.realityexpander.jetpackcomposepokedex.ui.theme.RobotoCondensed
@@ -194,8 +193,7 @@ fun PokedexEntry(
             .background(
                 Brush.verticalGradient(
                     listOf(
-//                        dominantColor,
-                        entry.dominantColor ?: dominantColor ?: defaultDominantColor,
+                        entry.dominantColor ?: dominantColor,
                         defaultDominantColor
                     )
                 )
@@ -216,11 +214,8 @@ fun PokedexEntry(
                     crossfade(true)
                     error(android.R.drawable.stat_notify_error)
                     this.listener(
-                        onSuccess = { _, res ->
-//                            viewModel.calcDominantColor() { color ->
-//                                dominantColor = color
-//                            }
-
+                        onSuccess = { _, _ ->
+                            // Calculate the dominant color
                             entry.dominantColor ?: run {
                                 scope.launch(Dispatchers.IO) {
 
@@ -258,26 +253,6 @@ fun PokedexEntry(
                 )
             }
 
-//            CoilImage(
-//                request = ImageRequest.Builder(LocalContext.current)
-//                    .data(entry.imageUrl)
-//                    .target {
-//                        viewModel.calcDominantColor(it) { color ->
-//                            dominantColor = color
-//                        }
-//                    }
-//                    .build(),
-//                contentDescription = entry.pokemonName,
-//                fadeIn = true,
-//                modifier = Modifier
-//                    .size(120.dp)
-//                    .align(CenterHorizontally)
-//            ) {
-//                CircularProgressIndicator(
-//                    color = MaterialTheme.colors.primary,
-//                    modifier = Modifier.scale(0.5f)
-//                )
-//            }
             Text(
                 text = entry.pokemonName,
                 fontFamily = RobotoCondensed,
