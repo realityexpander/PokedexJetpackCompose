@@ -229,9 +229,10 @@ fun PokemonTypeSection(types: List<Type>) {
             ) {
                 Text(
                     text = type.type.name.replaceFirstChar {
-                        if (it.isLowerCase()) it.titlecase(
-                            Locale.ROOT
-                        ) else it.toString()
+                        if (it.isLowerCase())
+                            it.titlecase(Locale.ROOT)
+                        else
+                            it.toString()
                     },
                     color = Color.White,
                     fontSize = 18.sp

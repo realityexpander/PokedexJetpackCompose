@@ -7,5 +7,4 @@ data class PokedexListEntry(
     val imageUrl: String,
     val number: Int,
     var dominantColor: Color? = null,
-    var _randomizer: Int = 0
 )

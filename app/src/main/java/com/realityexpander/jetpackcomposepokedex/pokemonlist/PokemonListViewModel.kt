@@ -110,7 +110,6 @@ class PokemonListViewModel @Inject constructor(
             }
             it
         }
-
     }
 
 
