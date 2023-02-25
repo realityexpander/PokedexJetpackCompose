@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.plcoding.jetpackcomposepokedex">
+    package="com.realityexpander.jetpackcomposepokedex">
 
     <uses-permission android:name="android.permission.INTERNET" />
 
     <application
-        android:name=".PokedexApplication"
+        android:name="com.realityexpander.jetpackcomposepokedex.PokedexApplication"
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
@@ -13,7 +13,7 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.JetpackComposePokedex">
         <activity
-            android:name=".MainActivity"
+            android:name="com.realityexpander.jetpackcomposepokedex.MainActivity"
             android:exported="true"
             android:label="@string/app_name"
             android:theme="@style/Theme.JetpackComposePokedex.NoActionBar">
